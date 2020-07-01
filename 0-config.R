@@ -60,8 +60,8 @@ source(here("/functions/0_pooling_functions.R"))
 source(here("/functions/0_prediction_functions.R"))
 
 #Data directories
-ghapdata_dir = "/home/andrew.mertens/data/KI/UCB-SuperLearner/Manuscript analysis data/"
-data_dir = "/home/andrew.mertens/data/KI/SLprediction/"
+ghapdata_dir = "/data/KI/UCB-SuperLearner/Manuscript analysis data/"
+data_dir = "/data/KI/SLprediction/"
 
 
 # Set plot themes

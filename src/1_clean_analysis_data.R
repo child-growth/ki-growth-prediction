@@ -27,34 +27,20 @@ cov <- cov %>% subset(., select = c(studyid, subjid, country, tr, arm,sex,
 
 
 #Subset to included studies
-#included_studies <- c("MAL-ED", "TanzaniaChild2", "JiVitA-3", "PROVIDE", "LCNI-5", "iLiNS-DOSE", "iLiNS-DYAD-M")
-included_studies <- c("MAL-ED", "NIH-Birth", "JiVitA-3", "PROVIDE", "NIH-Crypto", "iLiNS-DOSE", "iLiNS-DYAD-M")
-cov <- cov %>% filter(studyid %in% included_studies)
+# included_studies <- c("MAL-ED", "NIH-Birth", "JiVitA-3", "PROVIDE", "NIH-Crypto", "iLiNS-DOSE", "iLiNS-DYAD-M")
+# cov <- cov %>% filter(studyid %in% included_studies)
+
 cov$tr <- as.character(cov$tr)
 cov$tr[is.na(cov$tr)] <- ""
 cov$tr <- factor(cov$tr)
 
-df <- cov %>% filter(studyid=="iLiNS-DOSE")
-summary(df$W_mage)
-summary(df$W_mbmi)
 
-# #Subset to relevant predictors
-# df <- d %>% subset(., select = c(studyid,region, subjid, stunt, wast,haz,whz))
-# cov <- d %>% subset(., select = -c(region, subjid, stunt, wast,haz,whz))
-# 
-# #Impute missingness by study
-# table(is.na(cov$W_gagebrth))
-
+# #Subset to relevant predictors and impute missingness
 cov <- cov %>% 
   group_by(studyid) %>% 
   do(impute_missing_values(., type = "standard", add_indicators = T, prefix = "miss_")$data) %>%
   as.data.frame()
-table(cov$miss_W_mbmi)
-table(cov$miss_W_mbmi[cov$studyid=="iLiNS-DOSE"])
-table(cov$studyid,cov$miss_W_mbmi)
 
-i="iLiNS-DYAD-M" 
-j="miss_W_mbmi"
 
 #Mark missingness for variables fully missing from studies and
 #median/mode impute values from full data
@@ -89,13 +75,17 @@ for(i in colnames(cov)){
 
 
 ##Merge outcome and covariates back together
-#d <- cbind(df, cov %>% subset(., select = -c(studyid)))
-
 table(is.na(cov))
+
+
+#Temp use only a few mal-ed cohorts
+included_studies <- c("MAL-ED")
+cov <- cov %>% filter(studyid %in% included_studies)
+cov <- cov %>% filter(country %in% c("BANGLADESH", "BRAZIL", "INDIA"))
+
 
 
 
 #save covariates
-#saveRDS(d, here("data/clean_data.RDS"))
 saveRDS(cov, file=paste0(data_dir,"covariates.RDS"))
 

@@ -42,8 +42,14 @@ extract_AUC <- function(res){
   return(AUC_full)
 }
 
+#XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+#HAODONG CHECK THIS FUNCTION
+#Notes: 1) Check the calculation of the 
+# probability of Ybin=1 (Y < -1) from the predictions of continious Z-scores
+#XXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
-extract_preds <- function(res){
+
+extract_preds <- function(res, cutoff= -2){
   res <- res %>% filter(no_error)
   results <- Map(extract_results, res$fit)
   yhat_full <- Map(extract_yhat_full, results)
@@ -61,7 +67,7 @@ extract_preds <- function(res){
                    yhat_full=unlist(yhat_full), 
                    fold_index=unlist(fold_index))
   df$Ybin <- 1*(df$Y < -2)
-  df$prob <- pnorm(-(df$yhat_full - (-2)))
+  df$prob <- pnorm(-(df$yhat_full - (cutoff)))
   return(df)
 }
 
@@ -83,18 +89,17 @@ calc.ci.cvAUC <- function(d){
   return(resdf)
 }
 
+
+#XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+#HAODONG CHECK THIS FUNCTION
+#Notes: Check my use of the ROCInfo() function (which is later in this script) 
+# to classify predicted probabilities into
+# binary predictions
+#XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
 calc_predY = function(d){
- #cat(d$studyid[1], " ",d$country[1],"\n")
- #  analysis <- roc(response=d$Ybin, predictor=d$prob)
- #  
- #  
- #  #Find t that minimizes error
- #  e <- cbind(analysis$thresholds,analysis$sensitivities+analysis$specificities)
- #  e <- matrix(e[is.finite(rowSums(e)),])
- #  if(ncol(e)==1) e<-t(e)
- #  
- #  opt_t <- subset(e,e[,2]==max(e[,2]))[,1]
- 
+
   if(length(unique(d$Ybin))==2){
   #From https://ethen8181.github.io/machine-learning/unbalanced/unbalanced.html
   # user-defined different cost for false negative and false positive
@@ -102,10 +107,6 @@ calc_predY = function(d){
   cost_fn <- 200
   roc_info <- ROCInfo(data = d, predict = "prob", 
                        actual = "Ybin", cost.fp = cost_fp, cost.fn = cost_fn )
-  
-  #Predict outcome classes
-  # d$pred_Y <- ifelse(d$prob >= max(opt_t), 1, 0)
-  # d$opt_t <- max(opt_t)
   
   d$pred_Y <- ifelse(d$prob >= roc_info$cutoff, 1, 0)
   d$opt_t <- roc_info$cutoff
@@ -251,12 +252,19 @@ extract_R2 <- function(res){
   return(R2_full)
 }
 
+
+#XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+#HAODONG CHECK THIS FUNCTION
+#Notes: Check through my calculations of pooled R2 from pooled MSE's
+#XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
 pool_R2 <- function(res, Y, age, covars){
   
   R2 <- extract_R2(res)
   R2 <- R2 %>% filter(N_obs>=50)
   
-  #(temp) calculate SE
+  #calculate SE
   R2$se <- ((1-R2$R2.ci1) - (1-R2$R2))/1.96
   
   
@@ -292,18 +300,6 @@ pool_R2 <- function(res, Y, age, covars){
   pooled_r2_ub_re  <- 1-pooled_lb 
   pooled_r2_lb_re  <- 1-pooled_ub 
   cat("Pooled R2: ", pooled_r2_re, "\n")
-  
-  
-  # # Calculate pooled R2 + CI
-  # R2$N<-1
-  # R2$var<-R2$se^2
-  # pooled_r2_fe <- fit.rma(data=R2, ni="N", yi="R2", vi= "var",
-  #                      age=NULL, method = "FE", measure="MN")
-  # pooled_R2_re <- fit.rma(data=R2, ni="N", yi="R2", vi= "var",
-  #                         age=NULL, method = "REML", measure="MN")
-  # 
-  # pooled_r2_fe <- data.frame(studyid="Pooled - FE", R2=pooled_r2_fe$est, R2.ci1=pooled_r2_fe$lb, R2.ci2=pooled_r2_fe$ub)
-  # pooled_r2_re <- data.frame(studyid="Pooled - RE", R2=pooled_R2_re$est, R2.ci1=pooled_R2_re$lb, R2.ci2=pooled_R2_re$ub)
   
   
   pooled_r2_fe <- data.frame(studyid="Pooled - FE", R2=pooled_r2, R2.ci1=pooled_r2_lb, R2.ci2=pooled_r2_ub)

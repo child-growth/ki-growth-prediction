@@ -299,13 +299,19 @@ clean_prediction_dataset <- function(d, outcome = "haz_12", covars=covars, covar
 ## Function to fit SL model
 ## ------------------------------------------------------
 
+#XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+#HAODONG CHECK THIS FUNCTION
+#Notes: 1)Check if you can get the SL cross-validation working
+# 2) Check the calculations on lines 412-480:
+# Am I correctoly calculating MSE, R2, and AUC?
+#XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
 
 fit_SL_fun <- function(dat,  
                    outcome = "haz",
                    id="subjid",
                    family="gaussian",
                    covars,
-                   #fit_regression=T, 
                    slmod=sl,
                    CV=TRUE,
                    folds=5){

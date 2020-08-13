@@ -460,7 +460,9 @@ fit_SL_fun <- function(dat,
                          mse_null = mse_null,
                          R2_full = R2_full,
                          R2_glm = R2_glm,
-                         mse_ic=mse_ic
+                         mse_ic=mse_ic,
+                         mse = mse_full/mse_null,
+                         mse_var = se^2
                          )
     
     fold_index <- origami::folds2foldvec(SL_task$folds) 

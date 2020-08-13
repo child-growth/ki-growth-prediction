@@ -24,6 +24,8 @@ extract_AUC_full = function(x) x[["auc.ci"]]
 extract_cvAUC = function(x) x[["cvAUC"]]
 extract_ci.AUC = function(x) x[["ci"]]
 
+extract_mse_var = function(x) x[["mse_var"]]
+extract_mse = function(x) x[["mse"]]
 
 #-------------------------------------------
 # Extract AUC
@@ -223,6 +225,8 @@ extract_mse <- function(res){
   N_obs <- Map(extract_N_obs, results)
   perf_metrics <- Map(extract_perf_metrics, results)
   mse_ic <- Map(extract_mse_ic, perf_metrics)
+  mse <- Map(extract_mse, perf_metrics)
+  mse_var <- Map(extract_mse_var, perf_metrics)
   mse_full <- Map(extract_mse_full, perf_metrics)
   mse_null <- Map(extract_mse_null, perf_metrics)
   se_mse_full <- Map(extract_se_mse_full, mse_ic)
@@ -269,33 +273,24 @@ pool_R2 <- function(res, Y, age, covars){
   
   
   mse <- extract_mse(res) %>% filter(N_obs>=50)
-  #calc variance
-  mse <- mse %>%
-    mutate(var_mse_full=se_mse_full^2,var_mse_null=se_mse_null^2, N=n()) %>%  
-    dplyr::select (-c(se_mse_full, se_mse_null))
   
-  pooled_mse_full <-fit.rma(data=mse, ni="N",  yi="mse_full", vi= "var_mse_full",
-                                age=NULL, method = "FE", measure="MN")
-  pooled_mse_null <-fit.rma(data=mse, ni="N", yi="mse_null", vi= "var_mse_null",
-                                age=NULL, method = "FE", measure="MN")
-  pooled_mse <- as.matrix(pooled_mse_full$est)/as.matrix(pooled_mse_null$est)
-  pooled_lb <- as.matrix(pooled_mse_full$lb)/as.matrix(pooled_mse_null$lb)
-  pooled_ub <- as.matrix(pooled_mse_full$ub)/as.matrix(pooled_mse_null$ub)
+  pooled_mse <-fit.rma(data=mse, ni="N",  yi="mse", vi= "mse_var",
+                       age=NULL, method = "FE", measure="MN")
+  
+  pooled_mse <- as.matrix(pooled_mse$est)
+  pooled_lb <- as.matrix(pooled_mse$lb)
+  pooled_ub <- as.matrix(pooled_mse$ub)
   pooled_r2  <- 1-pooled_mse 
   pooled_r2_ub  <- 1-pooled_lb 
   pooled_r2_lb  <- 1-pooled_ub 
   cat("Pooled R2: ", pooled_r2, "\n")
   
-  #delta method
-  #https://migariane.github.io/DeltaMethodEpiTutorial.nb.html
+  pooled_mse <-fit.rma(data=mse, ni="N",  yi="mse", vi= "mse_var",
+                       age=NULL, method = "REML", measure="MN")
   
-  pooled_mse_full <-fit.rma(data=mse, ni="N",  yi="mse_full", vi= "var_mse_full",
-                            age=NULL, method = "REML", measure="MN")
-  pooled_mse_null <-fit.rma(data=mse, ni="N", yi="mse_null", vi= "var_mse_null",
-                            age=NULL, method = "REML", measure="MN")
-  pooled_mse <- as.matrix(pooled_mse_full$est)/as.matrix(pooled_mse_null$est)
-  pooled_lb <- as.matrix(pooled_mse_full$lb)/as.matrix(pooled_mse_null$lb)
-  pooled_ub <- as.matrix(pooled_mse_full$ub)/as.matrix(pooled_mse_null$ub)
+  pooled_mse <- as.matrix(pooled_mse$est)
+  pooled_lb <- as.matrix(pooled_mse$lb)
+  pooled_ub <- as.matrix(pooled_mse$ub)
   pooled_r2_re  <- 1-pooled_mse 
   pooled_r2_ub_re  <- 1-pooled_lb 
   pooled_r2_lb_re  <- 1-pooled_ub 

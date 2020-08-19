@@ -9,6 +9,8 @@ extract_R2_full = function(x) x[["R2_full"]]
 extract_R2_glm = function(x) x[["R2_glm"]]
 extract_N_obs = function(x) x[["N_obs"]]
 
+extract_mse_var = function(x) x[["mse_var"]]
+extract_mse_ratio = function(x) x[["mse"]]
 extract_mse_full = function(x) x[["mse_full"]]
 extract_mse_null = function(x) x[["mse_null"]]
 extract_mse_ic = function(x) x[["mse_ic"]]
@@ -24,8 +26,7 @@ extract_AUC_full = function(x) x[["auc.ci"]]
 extract_cvAUC = function(x) x[["cvAUC"]]
 extract_ci.AUC = function(x) x[["ci"]]
 
-extract_mse_var = function(x) x[["mse_var"]]
-extract_mse = function(x) x[["mse"]]
+
 
 #-------------------------------------------
 # Extract AUC
@@ -219,13 +220,15 @@ pool_bin_AUC <- function(res, Y, age, covars, save=T){
 #-------------------------------------------
 # Extract MSE
 #-------------------------------------------
+
+
 extract_mse <- function(res){
   res <- res %>% filter(no_error)
   results <- Map(extract_results, res$fit)
   N_obs <- Map(extract_N_obs, results)
   perf_metrics <- Map(extract_perf_metrics, results)
   mse_ic <- Map(extract_mse_ic, perf_metrics)
-  mse <- Map(extract_mse, perf_metrics)
+  mse <- Map(extract_mse_ratio, perf_metrics)
   mse_var <- Map(extract_mse_var, perf_metrics)
   mse_full <- Map(extract_mse_full, perf_metrics)
   mse_null <- Map(extract_mse_null, perf_metrics)
@@ -234,6 +237,8 @@ extract_mse <- function(res){
   mse_full <- data.frame(studyid=res$studyid, 
                          country=res$country, 
                          N_obs=unlist(N_obs, use.names=FALSE),
+                         mse = unlist(mse),
+                         mse_var = unlist(mse_var),
                          mse_full=unlist(mse_full),
                          mse_null=unlist(mse_null),
                          se_mse_full=unlist(se_mse_full),
@@ -263,6 +268,7 @@ extract_R2 <- function(res){
 #XXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 
+
 pool_R2 <- function(res, Y, age, covars){
   
   R2 <- extract_R2(res)
@@ -274,39 +280,42 @@ pool_R2 <- function(res, Y, age, covars){
   
   mse <- extract_mse(res) %>% filter(N_obs>=50)
   
+  mse <- mse %>%
+    mutate(N=n()) %>%  
+    dplyr::select (-c(se_mse_full, se_mse_null, mse_full, mse_null))
+  
   pooled_mse <-fit.rma(data=mse, ni="N",  yi="mse", vi= "mse_var",
                        age=NULL, method = "FE", measure="MN")
   
-  pooled_mse <- as.matrix(pooled_mse$est)
+  pooled_mse_est <- as.matrix(pooled_mse$est)
   pooled_lb <- as.matrix(pooled_mse$lb)
   pooled_ub <- as.matrix(pooled_mse$ub)
-  pooled_r2  <- 1-pooled_mse 
+  pooled_r2  <- 1-pooled_mse_est 
   pooled_r2_ub  <- 1-pooled_lb 
   pooled_r2_lb  <- 1-pooled_ub 
   cat("Pooled R2: ", pooled_r2, "\n")
   
+  
   pooled_mse <-fit.rma(data=mse, ni="N",  yi="mse", vi= "mse_var",
                        age=NULL, method = "REML", measure="MN")
   
-  pooled_mse <- as.matrix(pooled_mse$est)
+  pooled_mse_est <- as.matrix(pooled_mse$est)
   pooled_lb <- as.matrix(pooled_mse$lb)
   pooled_ub <- as.matrix(pooled_mse$ub)
-  pooled_r2_re  <- 1-pooled_mse 
+  pooled_r2_re  <- 1-pooled_mse_est 
   pooled_r2_ub_re  <- 1-pooled_lb 
   pooled_r2_lb_re  <- 1-pooled_ub 
-  cat("Pooled R2: ", pooled_r2_re, "\n")
+  cat("Pooled R2_re: ", pooled_r2_re, "\n")
   
   
   pooled_r2_fe <- data.frame(studyid="Pooled - FE", R2=pooled_r2, R2.ci1=pooled_r2_lb, R2.ci2=pooled_r2_ub)
   pooled_r2_re <- data.frame(studyid="Pooled - RE", R2=pooled_r2_re, R2.ci1=pooled_r2_lb_re, R2.ci2=pooled_r2_ub_re)
   
   
-  
   R2.df <- bind_rows(R2, pooled_r2_fe, pooled_r2_re)
   R2.df$Y <- Y
   R2.df$age <- age
-  R2.df$covars <- covars
-  
+  # R2.df$covars <- covars
   return(R2.df)
 }
 

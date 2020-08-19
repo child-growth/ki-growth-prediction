@@ -2,8 +2,6 @@
 
 
 
-
-
 source(paste0(here::here(), "/0-config.R"))
 
 
@@ -26,7 +24,7 @@ CV_setting = FALSE
 df <- d %>% filter(studyid=="MAL-ED", country=="BANGLADESH")
 
 #fit model
-test <- fit_SL(df, outcome = "haz_24", family="gaussian", covars=covars12, slmod=sl, CV=FALSE)
+test <- fit_SL(df, outcome = "haz_12", family="gaussian", covars=covars12, slmod=sl, CV=FALSE)
 
 #look at performance metrics:
 test$result$perf_metrics
@@ -53,8 +51,16 @@ fit_SuperLearner <- function(d, outcome, covars, slmod=sl, CV=CV_setting, family
 }
 
 #12 month haz, birth covariates
-res_haz12_covars_birth <- fit_SuperLearner(d,  outcome = "haz_12", covars=covars12, slmod=sl, CV=CV_setting)
+res_haz12_covars_birth <- fit_SuperLearner(d,  outcome = "haz_9", covars=covars12, slmod=sl, CV=CV_setting)
 
 #12 month stunting, birth covariates
 res_stunt12_covars_birth <- fit_SuperLearner(d,  outcome = "stunt_12", covars=covars12, family="binomial", slmod=sl, CV=CV_setting)
+
+
+
+#Test for pooled R2
+res_haz12_covars_birth <- fit_SuperLearner(d,  outcome = "haz_9", covars=covars12, slmod=sl, CV=CV_setting)
+pR2 = pool_R2(res=res_haz12_covars_birth, Y="haz_9", age= NULL, covars =covars12)
+
+
 

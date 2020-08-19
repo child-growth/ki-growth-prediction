@@ -50,11 +50,11 @@ res_haz12_covars3 <- fit_SuperLearner(d,  outcome = "haz_12", covars=covars3, sl
 res_haz12_covars6 <- fit_SuperLearner(d,  outcome = "haz_12", covars=covars6, slmod=sl, CV=CV_setting)
 res_haz12_covars9 <- fit_SuperLearner(d,  outcome = "haz_12", covars=covars9, slmod=sl, CV=CV_setting)
 
-saveRDS(res_haz12_covars, here("prediction-models/res_haz12_covars.RDS"))
-saveRDS(res_haz12_covars_birth, here("prediction-models/res_haz12_covars_birth.RDS"))
-saveRDS(res_haz12_covars3, here("prediction-models/res_haz12_covars3.RDS"))
-saveRDS(res_haz12_covars6, here("prediction-models/res_haz12_covars6.RDS"))
-saveRDS(res_haz12_covars9, here("prediction-models/res_haz12_covars9.RDS"))
+saveRDS(res_haz12_covars, paste0(model_dir,"res_haz12_covars.RDS"))
+saveRDS(res_haz12_covars_birth, paste0(model_dir,"res_haz12_covars_birth.RDS"))
+saveRDS(res_haz12_covars3, paste0(model_dir,"res_haz12_covars3.RDS"))
+saveRDS(res_haz12_covars6, paste0(model_dir,"res_haz12_covars6.RDS"))
+saveRDS(res_haz12_covars9, paste0(model_dir,"res_haz12_covars9.RDS"))
 
 
 #18 month haz
@@ -65,12 +65,12 @@ res_haz18_covars6 <- fit_SuperLearner(d,  outcome = "haz_18", covars=covars6, sl
 res_haz18_covars9 <- fit_SuperLearner(d,  outcome = "haz_18", covars=covars9, slmod=sl, CV=CV_setting)
 res_haz18_covars12 <- fit_SuperLearner(d,  outcome = "haz_18", covars=covars12, slmod=sl, CV=CV_setting)
 
-saveRDS(res_haz18_covars, here("prediction-models/res_haz18_covars.RDS"))
-saveRDS(res_haz18_covars_birth, here("prediction-models/res_haz18_covars_birth.RDS"))
-saveRDS(res_haz18_covars3, here("prediction-models/res_haz18_covars3.RDS"))
-saveRDS(res_haz18_covars6, here("prediction-models/res_haz18_covars6.RDS"))
-saveRDS(res_haz18_covars9, here("prediction-models/res_haz18_covars9.RDS"))
-saveRDS(res_haz18_covars12, here("prediction-models/res_haz18_covars12.RDS"))
+saveRDS(res_haz18_covars, paste0(model_dir,"res_haz18_covars.RDS"))
+saveRDS(res_haz18_covars_birth, paste0(model_dir,"res_haz18_covars_birth.RDS"))
+saveRDS(res_haz18_covars3, paste0(model_dir,"res_haz18_covars3.RDS"))
+saveRDS(res_haz18_covars6, paste0(model_dir,"res_haz18_covars6.RDS"))
+saveRDS(res_haz18_covars9, paste0(model_dir,"res_haz18_covars9.RDS"))
+saveRDS(res_haz18_covars12, paste0(model_dir,"res_haz18_covars12.RDS"))
 
 #24 month haz
 res_haz24_covars <- fit_SuperLearner(d,  outcome = "haz_24", covars=covars, slmod=sl, CV=CV_setting, include_anthro=F)
@@ -80,12 +80,12 @@ res_haz24_covars6 <- fit_SuperLearner(d,  outcome = "haz_24", covars=covars6, sl
 res_haz24_covars9 <- fit_SuperLearner(d,  outcome = "haz_24", covars=covars9, slmod=sl, CV=CV_setting)
 res_haz24_covars12 <- fit_SuperLearner(d,  outcome = "haz_24", covars=covars12, slmod=sl, CV=CV_setting)
 
-saveRDS(res_haz24_covars, here("prediction-models/res_haz24_covars.RDS"))
-saveRDS(res_haz24_covars_birth, here("prediction-models/res_haz24_covars_birth.RDS"))
-saveRDS(res_haz24_covars3, here("prediction-models/res_haz24_covars3.RDS"))
-saveRDS(res_haz24_covars6, here("prediction-models/res_haz24_covars6.RDS"))
-saveRDS(res_haz24_covars9, here("prediction-models/res_haz24_covars9.RDS"))
-saveRDS(res_haz24_covars12, here("prediction-models/res_haz24_covars12.RDS"))
+saveRDS(res_haz24_covars, paste0(model_dir,"res_haz24_covars.RDS"))
+saveRDS(res_haz24_covars_birth, paste0(model_dir,"res_haz24_covars_birth.RDS"))
+saveRDS(res_haz24_covars3, paste0(model_dir,"res_haz24_covars3.RDS"))
+saveRDS(res_haz24_covars6, paste0(model_dir,"res_haz24_covars6.RDS"))
+saveRDS(res_haz24_covars9, paste0(model_dir,"res_haz24_covars9.RDS"))
+saveRDS(res_haz24_covars12, paste0(model_dir,"res_haz24_covars12.RDS"))
 
 
 
@@ -104,16 +104,16 @@ res_haz24_covars_3_6 <- fit_SuperLearner(d,  outcome = "haz_24", covars=covars3,
 res_haz24_covars_6_9 <- fit_SuperLearner(d,  outcome = "haz_24", covars=covars6, covars2=covars9, slmod=sl, CV=CV_setting)
 res_haz24_covars_9_12 <- fit_SuperLearner(d,  outcome = "haz_24", covars=covars9, covars2=covars12, slmod=sl, CV=CV_setting)
 
-saveRDS(res_haz12_covars_birth_3, here("prediction-models/res_haz12_covars_birth_3.RDS"))
-saveRDS(res_haz12_covars_3_6, here("prediction-models/res_haz12_covars3_6.RDS"))
-saveRDS(res_haz12_covars_6_9, here("prediction-models/res_haz12_covars6_9.RDS"))
+saveRDS(res_haz12_covars_birth_3, paste0(model_dir,"res_haz12_covars_birth_3.RDS"))
+saveRDS(res_haz12_covars_3_6, paste0(model_dir,"res_haz12_covars3_6.RDS"))
+saveRDS(res_haz12_covars_6_9, paste0(model_dir,"res_haz12_covars6_9.RDS"))
 
-saveRDS(res_haz18_covars_birth_3, here("prediction-models/res_haz18_covars_birth_3.RDS"))
-saveRDS(res_haz18_covars_3_6, here("prediction-models/res_haz18_covars3_6.RDS"))
-saveRDS(res_haz18_covars_6_9, here("prediction-models/res_haz18_covars6_9.RDS"))
-saveRDS(res_haz18_covars_9_12, here("prediction-models/res_haz18_covars9_12.RDS"))
+saveRDS(res_haz18_covars_birth_3, paste0(model_dir,"res_haz18_covars_birth_3.RDS"))
+saveRDS(res_haz18_covars_3_6, paste0(model_dir,"res_haz18_covars3_6.RDS"))
+saveRDS(res_haz18_covars_6_9, paste0(model_dir,"res_haz18_covars6_9.RDS"))
+saveRDS(res_haz18_covars_9_12, paste0(model_dir,"res_haz18_covars9_12.RDS"))
 
-saveRDS(res_haz24_covars_birth_3, here("prediction-models/res_haz24_covars_birth_3.RDS"))
-saveRDS(res_haz24_covars_3_6, here("prediction-models/res_haz24_covars3_6.RDS"))
-saveRDS(res_haz24_covars_6_9, here("prediction-models/res_haz24_covars6_9.RDS"))
-saveRDS(res_haz24_covars_9_12, here("prediction-models/res_haz24_covars9_12.RDS"))
+saveRDS(res_haz24_covars_birth_3, paste0(model_dir,"res_haz24_covars_birth_3.RDS"))
+saveRDS(res_haz24_covars_3_6, paste0(model_dir,"res_haz24_covars3_6.RDS"))
+saveRDS(res_haz24_covars_6_9, paste0(model_dir,"res_haz24_covars6_9.RDS"))
+saveRDS(res_haz24_covars_9_12, paste0(model_dir,"res_haz24_covars9_12.RDS"))

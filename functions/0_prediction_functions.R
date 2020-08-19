@@ -166,6 +166,52 @@ impute_missing_values <- function (data, type = "standard", add_indicators = TRU
   results
 }
 
+missingness_indicators<-function (data, prefix = "miss_", remove_constant = TRUE, 
+          remove_collinear = TRUE, skip_vars = c(), verbose = FALSE) 
+{
+  any_nas = which(sapply(data[, !colnames(data) %in% skip_vars, 
+                              drop = FALSE], function(col) anyNA(col)))
+  if (verbose) {
+    cat("Generating", length(any_nas), "missingness indicators.\n")
+  }
+  indicators = 1L * is.na(data[, names(any_nas), drop = FALSE])
+  if (length(any_nas) > 0) {
+    colnames(indicators) = paste0(prefix, names(any_nas))
+  }
+  if (remove_constant) {
+    col_means = colMeans(indicators)
+    if (verbose) {
+      num_removed = sum(col_means %in% c(0, 1))
+      if (num_removed > 0) {
+        cat("Removing", num_removed, "indicators that are constant.\n")
+      }
+    }
+    indicators = indicators[, !col_means %in% c(0, 1), drop = FALSE]
+  }
+  if (remove_collinear) {
+    if (verbose) {
+      cat("Checking for collinearity of indicators.\n")
+    }
+    linear_combos = caret::findLinearCombos(indicators)
+    remove_columns = linear_combos$remove
+    if (length(linear_combos$remove) > 0L) {
+      if (verbose) {
+        cat("Removing", length(linear_combos$remove), 
+            "indicators due to collinearity:\n")
+        cat(paste0(colnames(indicators)[linear_combos$remove], 
+                   collapse = ", "), "\n")
+      }
+      indicators = indicators[, -linear_combos$remove, 
+                              drop = FALSE]
+    }
+  }
+  if (verbose) {
+    cat("Final number of indicators:", ncol(indicators), 
+        "\n")
+  }
+  return(indicators)
+}
+
 
 #-------------------------------------------
 # set up SL components
@@ -200,7 +246,7 @@ ranger_lrnr <- Lrnr_ranger$new()
 #gbm_lrnr <- Lrnr_gbm$new()
 earth_lrnr <- Lrnr_earth$new()
 #dbarts_lrnr <- Lrnr_dbarts$new()
-hal_lrnr <- Lrnr_hal9001$new()
+#hal_lrnr <- Lrnr_hal9001$new()
 #gam_lrnr <- Lrnr_gam$new()
 polyspline<-Lrnr_polspline$new()
 
@@ -217,7 +263,7 @@ screen_glmnet <- Lrnr_pkg_SuperLearner_screener$new("screen.glmnet")
 cor_nnls_lrnr <- make_learner(Pipeline, screen_cor, glm_fast)
 cor_glm <- make_learner(Pipeline, screen_cor, glm_fast)
 cor_spline <- make_learner(Pipeline, screen_cor, polyspline)
-screened_hal <- make_learner(Pipeline, screen_glmnet, hal_lrnr)
+#screened_hal <- make_learner(Pipeline, screen_glmnet, hal_lrnr)
 
 
 

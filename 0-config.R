@@ -15,7 +15,7 @@ library(here)
 library(tidyverse)
 library(ggplot2)
 library(dplyr)
-library(gridExtra)
+#library(gridExtra)
 library(reshape2)
 library(metafor)
 library(data.table)
@@ -62,6 +62,7 @@ source(here("/functions/0_prediction_functions.R"))
 #Data directories
 ghapdata_dir = "/data/KI/UCB-SuperLearner/Manuscript analysis data/"
 data_dir = "/data/KI/SLprediction/"
+model_dir = paste0(data_dir,"models/")
 
 
 # Set plot themes

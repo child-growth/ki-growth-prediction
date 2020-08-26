@@ -43,6 +43,9 @@ fit_SuperLearner <- function(d, outcome, covars, slmod=sl, CV_setting=CV_setting
 
 #d <- d %>% filter(country=="TANZANIA, UNITED REPUBLIC OF")
 
+start_time <- Sys.time()
+
+
 #12 month haz
 res_haz12_covars <- fit_SuperLearner(d,  outcome = "haz_12", covars=covars, slmod=sl, CV=CV_setting, include_anthro=F)
 res_haz12_covars_birth <- fit_SuperLearner(d,  outcome = "haz_12", covars=covars_birth, slmod=sl, CV=CV_setting)
@@ -117,3 +120,8 @@ saveRDS(res_haz24_covars_birth_3, paste0(model_dir,"res_haz24_covars_birth_3.RDS
 saveRDS(res_haz24_covars_3_6, paste0(model_dir,"res_haz24_covars3_6.RDS"))
 saveRDS(res_haz24_covars_6_9, paste0(model_dir,"res_haz24_covars6_9.RDS"))
 saveRDS(res_haz24_covars_9_12, paste0(model_dir,"res_haz24_covars9_12.RDS"))
+
+
+end_time <- Sys.time()
+
+end_time - start_time

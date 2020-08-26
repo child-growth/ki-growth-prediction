@@ -25,20 +25,28 @@ df <- d %>% filter(studyid=="MAL-ED", country=="BANGLADESH")
 
 #fit model
 start_time <- Sys.time()
-test <- fit_SL(df, outcome = "haz_12", family="gaussian", covars=covars12, slmod=sl, CV=FALSE)
+test <- fit_SL(df, outcome = "haz_18", family="gaussian", covars=covars12, slmod=sl, CV=FALSE)
 end_time <- Sys.time()
 
 end_time - start_time
 
 
 start_time2 <- Sys.time()
-test2 <- fit_SL(df, outcome = "haz_12", family="gaussian", covars=covars12, slmod=sl, CV=TRUE)
+test2 <- fit_SL(df, outcome = "haz_18", family="gaussian", covars=covars12, slmod=sl, CV=TRUE)
 end_time2 <- Sys.time()
 
 end_time2 - start_time2
 
 #look at performance metrics:
 test$result$perf_metrics
+
+
+
+start_time <- Sys.time()
+test <- fit_SL(df, outcome = "stunt_18", family="binomial", covars=covars12, slmod=sl, CV=FALSE)
+end_time <- Sys.time()
+
+end_time - start_time
 
 
 

@@ -247,7 +247,7 @@ ranger_lrnr <- Lrnr_ranger$new()
 earth_lrnr <- Lrnr_earth$new()
 #dbarts_lrnr <- Lrnr_dbarts$new()
 #hal_lrnr <- Lrnr_hal9001$new()
-#gam_lrnr <- Lrnr_gam$new()
+gam_lrnr <- Lrnr_gam$new()
 polyspline<-Lrnr_polspline$new()
 
 
@@ -275,6 +275,7 @@ stack <- make_learner(
   lrnr_glmnet,
   ranger_lrnr,
   xgboost_lrnr,
+  gam_lrnr,
   cor_spline#,
   #screened_hal
 )

@@ -73,7 +73,7 @@ fit_SuperLearner <- function(d, outcome, covars, slmod=sl, CV=CV_setting, family
 res_haz12_covars_birth <- fit_SuperLearner(d,  outcome = "haz_9", covars=covars12, slmod=sl, CV=CV_setting)
 
 #12 month stunting, birth covariates
-res_stunt12_covars_birth <- fit_SuperLearner(d,  outcome = "stunt_12", covars=covars12, family="binomial", slmod=sl, CV=CV_setting)
+res_stunt12_covars_birth <- fit_SuperLearner(d,  outcome = "stunt_18", covars=covars12, family="binomial", slmod=sl, CV=CV_setting)
 
 
 

@@ -414,7 +414,7 @@ fit_SL_fun <- function(dat,
   } else {
     stop("unsupported OS")
   }
-  
+
   plan(multicore, workers=floor(cpus_logical/4))
   
   # create the sl3 task

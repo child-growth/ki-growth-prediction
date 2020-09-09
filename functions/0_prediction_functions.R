@@ -280,6 +280,19 @@ stack <- make_learner(
   #screened_hal
 )
 
+stack <- make_learner(
+  Stack,
+  lrnr_mean,
+  glm_fast,
+  # cor_glm,
+   lrnr_glmnet,
+  # ranger_lrnr,
+  xgboost_lrnr,
+  gam_lrnr#,
+  # cor_spline#,
+  #screened_hal
+)
+
 
 weighted_stack <- make_learner(
   Stack,

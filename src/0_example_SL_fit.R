@@ -14,7 +14,7 @@ d <- d %>% filter(arm=="" | arm=="Control" | arm=="Iron and folic acid supplemen
 d <- droplevels(d)
 
 #Set cross-valisation parameter
-CV_setting = FALSE
+CV_setting = TRUE
 
 #-------------------------------------
 #Fit Superlearner model for a single cohort

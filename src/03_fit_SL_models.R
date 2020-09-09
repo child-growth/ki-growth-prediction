@@ -124,4 +124,8 @@ saveRDS(res_haz24_covars_9_12, paste0(model_dir,"res_haz24_covars9_12.RDS"))
 
 end_time <- Sys.time()
 
-end_time - start_time
+timerun <- end_time - start_time
+
+saveRDS(timerun, paste0(model_dir,"time_benchmark.RDS"))
+
+

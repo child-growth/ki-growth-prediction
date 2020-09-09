@@ -355,25 +355,25 @@ clean_prediction_dataset <- function(d, outcome = "haz_12", covars=covars, covar
 
 
 fit_SL_fun <- function(dat,  
-                   outcome = "haz",
-                   id="subjid",
-                   family="gaussian",
-                   covars,
-                   slmod=sl,
-                   CV=TRUE,
-                   folds=5){
+                       outcome = "haz",
+                       id="subjid",
+                       family="gaussian",
+                       covars,
+                       slmod=sl,
+                       CV=TRUE,
+                       folds=5){
   
   Y_miss <- sum(is.na(dat[,outcome]))
   if(Y_miss>0){
-   dat <- dat[!is.na(dat[,outcome]),]
-   cat("Dropping ",Y_miss," missing outcome observations\n")
+    dat <- dat[!is.na(dat[,outcome]),]
+    cat("Dropping ",Y_miss," missing outcome observations\n")
   }
   
   start_time <- Sys.time()
   full_covars <- covars
   #Drop missing variables or all-NA variables 
   missing_covars <- covars[!(covars %in% colnames(dat))]
-    
+  
   
   #Drop near-zero variance predictors
   not_cov <- dat[,!(colnames(dat) %in% covars)]
@@ -394,14 +394,14 @@ fit_SL_fun <- function(dat,
   dat <-cbind(not_cov,cov)
   dat <- data.table(dat)
   
-
-
+  
+  
   n= nrow(dat)
   y <- as.matrix(dat[, outcome, with=FALSE])
   colnames(y) <- NULL
   
-                  
-                    
+  
+  
   
   #parallelize
   uname <- system("uname -a", intern = TRUE)
@@ -419,43 +419,72 @@ fit_SL_fun <- function(dat,
   
   # create the sl3 task
   set.seed(12345)
+  cv_folds = make_folds(dat, fold_fun = folds_vfold, V = folds)
   SL_task <- make_sl3_Task(
     data = dat,
     covariates = covars,
     outcome = outcome,
-    folds = make_folds(dat, fold_fun = folds_vfold, V = folds)
+    folds = cv_folds
   )
   
   
-
+  
   
   ##3. Fit the full model
-
+  
   
   #get cross validated fit
-  if(CV){
-    cv_sl <- make_learner(Lrnr_cv, slmod, full_fit = TRUE)
-    cv_glm <- make_learner(Lrnr_cv, glm_sl, full_fit = TRUE)
-    sl_fit <- cv_sl$train(SL_task)
-    glm_fit <- cv_glm$train(SL_task)
+  # if(CV){
+  #   cv_sl <- make_learner(Lrnr_cv, slmod, full_fit = TRUE)
+  #   cv_glm <- make_learner(Lrnr_cv, glm_sl, full_fit = TRUE)
+  #   sl_fit <- cv_sl$train(SL_task)
+  #   glm_fit <- cv_glm$train(SL_task)
+  # }else{
+  #   sl_fit <- slmod$train(SL_task)
+  #   glm_fit <- glm_sl$train(SL_task)
+  # }
+  
+  #0903 test
+  sl_fit <- slmod$train(SL_task)
+  glm_fit <- glm_sl$train(SL_task)
+  
+  if (CV){
+    
+    # start_time <- Sys.time()
+    # CVsl <- CV_lrnr_sl(sl_fit, SL_task, loss_squared_error)
+    # end_time <- Sys.time()
+    # print(end_time - start_time)
+    
+    # start_time <- Sys.time()
+    cv_sl <- make_learner(Lrnr_cv, sl_fit, full_fit = TRUE)
+    fit_cv_sl <- cv_sl$train(SL_task)
+    yhat_full <- fit_cv_sl$predict_fold(SL_task,"validation")
+    # end_time <- Sys.time()
+    # print(end_time - start_time)
+    
+    # start_time <- Sys.time()
+    cv_glm <- make_learner(Lrnr_cv, glm_fit, full_fit = TRUE)
+    fit_cv_glm <- cv_glm$train(SL_task)
+    yhat_glm <- fit_cv_glm$predict_fold(SL_task,"validation")
+    # end_time <- Sys.time()
+    # print(end_time - start_time)
+    
+    lrnr_cv_null <- make_learner(Lrnr_cv, make_learner(Lrnr_mean))
+    fit_null <- lrnr_cv_null$train(SL_task)
+    yhat_null <- fit_null$predict_fold(SL_task,"validation")
+    
   }else{
-    sl_fit <- slmod$train(SL_task)
-    glm_fit <- glm_sl$train(SL_task)
+    yhat_full <- sl_fit$predict()
+    yhat_glm <- glm_fit$predict()
+    yhat_null <- mean(y)
   }
-
-  #get outcome predictions
-  yhat_full <- sl_fit$predict_fold(SL_task,"validation")
-  yhat_glm <- glm_fit$predict_fold(SL_task,"validation")
   
   #save residuals
   SL_residuals <- y-yhat_full
   glm_residuals <- y-yhat_glm
   
-
-  ##4. Fit the null model
-  lrnr_cv_null <- make_learner(Lrnr_cv, make_learner(Lrnr_mean))
-  fit_null <- lrnr_cv_null$train(SL_task)
-  yhat_null <- fit_null$predict_fold(SL_task,"validation")
+  
+  
   
   if(family=="gaussian"){
     
@@ -476,7 +505,7 @@ fit_SL_fun <- function(dat,
     R2 <- 1 - psi
     R2.ci1 <- 1 - CI_up
     R2.ci2 <- 1 - CI_low
-
+    
     glm.psi <- mse_glm/mse_null
     glm.se <- sqrt(var(IC_glm)/n)
     glm.CI_up <- glm.psi + 1.96*glm.se
@@ -485,22 +514,22 @@ fit_SL_fun <- function(dat,
     glm.R2.ci1 <- 1 - glm.CI_up
     glm.R2.ci2 <- 1 - glm.CI_low
     
-        
+    
     R2_full <- data.frame(R2=R2, R2.se=se, R2.ci1=R2.ci1, R2.ci2=R2.ci2)
     R2_glm <- data.frame(R2=glm.R2, R2.se=glm.se, R2.ci1=glm.R2.ci1, R2.ci2=glm.R2.ci2)
     
     ##6. add more results to pool R2
     
-    ic_mse_full <- (yhat_full-y)^2 - mse_full
-    ic_mse_null <- (yhat_null-y)^2 - mse_null
-    
-    se_mse_full <- sqrt(var(ic_mse_full)/n)
-    se_mse_null <- sqrt(var(ic_mse_null)/n)
-    
-    mse_ic <- list(ic_mse_full=ic_mse_full,
-                   ic_mse_null=ic_mse_null,
-                   se_mse_full=se_mse_full,
-                   se_mse_null=se_mse_null)
+    # ic_mse_full <- (yhat_full-y)^2 - mse_full
+    # ic_mse_null <- (yhat_null-y)^2 - mse_null
+    # 
+    # se_mse_full <- sqrt(var(ic_mse_full)/n)
+    # se_mse_null <- sqrt(var(ic_mse_null)/n)
+    # 
+    # mse_ic <- list(ic_mse_full=ic_mse_full,
+    #                ic_mse_null=ic_mse_null,
+    #                se_mse_full=se_mse_full,
+    #                se_mse_null=se_mse_null)
     
     perf_metrics <- list(mse_full = mse_full,
                          mse_glm = mse_glm,
@@ -510,13 +539,13 @@ fit_SL_fun <- function(dat,
                          mse_ic=mse_ic,
                          mse = mse_full/mse_null,
                          mse_var = se^2
-                         )
+    )
     
     fold_index <- origami::folds2foldvec(SL_task$folds) 
     
   }else{
     fold_index <- origami::folds2foldvec(SL_task$folds) 
-
+    
     outcome <- SL_task$Y
     
     auc.plotdf <- cvAUC(predictions=yhat_full, labels=outcome, folds=fold_index)
@@ -529,32 +558,32 @@ fit_SL_fun <- function(dat,
                          fold_index = fold_index)
   }
   
- 
+  
   end_time <- Sys.time()
   
   run_time <- end_time - start_time
   
- 
-      return(
-        list(
-          sl_fit = sl_fit,
-          covars = list(specified_covars=full_covars,
-                        missing_covars=missing_covars, 
-                        dropped_covars=dropped_covars,
-                        used_covars=covars),
-          N_obs=n,
-          yhat_full = yhat_full,
-          yhat_glm = yhat_glm,
-          Y= SL_task$Y,
-          fold_index=fold_index,
-          perf_metrics=perf_metrics,
-          SL_residuals = SL_residuals,
-          glm_residuals = glm_residuals,
-          run_time=run_time,
-          Y_miss=Y_miss,
-          id=dat$subjid
-        )
-      )
+  
+  return(
+    list(
+      sl_fit = sl_fit,
+      covars = list(specified_covars=full_covars,
+                    missing_covars=missing_covars, 
+                    dropped_covars=dropped_covars,
+                    used_covars=covars),
+      N_obs=n,
+      yhat_full = yhat_full,
+      yhat_glm = yhat_glm,
+      Y= SL_task$Y,
+      fold_index=fold_index,
+      perf_metrics=perf_metrics,
+      SL_residuals = SL_residuals,
+      glm_residuals = glm_residuals,
+      run_time=run_time,
+      Y_miss=Y_miss,
+      id=dat$subjid
+    )
+  )
   #}
 }
 

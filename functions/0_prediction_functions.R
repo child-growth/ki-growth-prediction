@@ -251,7 +251,7 @@ gam_lrnr <- Lrnr_gam$new()
 polyspline<-Lrnr_polspline$new()
 
 
-cor_pipeline <- try(make_learner(Pipeline, screen_cor, stack))
+
 
 
 

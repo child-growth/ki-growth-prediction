@@ -15,7 +15,7 @@ d <- d %>% filter(arm=="" | arm=="Control" | arm=="Iron and folic acid supplemen
 d <- droplevels(d)
 
 #Set parameter
-CV_setting = FALSE
+CV_setting = TRUE
 
 
 #wrapper function to fit and clean SL

@@ -533,16 +533,16 @@ fit_SL_fun <- function(dat,
     
     ##6. add more results to pool R2
     
-    # ic_mse_full <- (yhat_full-y)^2 - mse_full
-    # ic_mse_null <- (yhat_null-y)^2 - mse_null
-    # 
-    # se_mse_full <- sqrt(var(ic_mse_full)/n)
-    # se_mse_null <- sqrt(var(ic_mse_null)/n)
-    # 
-    # mse_ic <- list(ic_mse_full=ic_mse_full,
-    #                ic_mse_null=ic_mse_null,
-    #                se_mse_full=se_mse_full,
-    #                se_mse_null=se_mse_null)
+    ic_mse_full <- (yhat_full-y)^2 - mse_full
+    ic_mse_null <- (yhat_null-y)^2 - mse_null
+
+    se_mse_full <- sqrt(var(ic_mse_full)/n)
+    se_mse_null <- sqrt(var(ic_mse_null)/n)
+
+    mse_ic <- list(ic_mse_full=ic_mse_full,
+                   ic_mse_null=ic_mse_null,
+                   se_mse_full=se_mse_full,
+                   se_mse_null=se_mse_null)
     
     perf_metrics <- list(mse_full = mse_full,
                          mse_glm = mse_glm,

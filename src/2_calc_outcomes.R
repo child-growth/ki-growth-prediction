@@ -21,9 +21,9 @@ cov <- readRDS(paste0(data_dir,"covariates.RDS"))
 #   filter(studyid %in% included_studies)
 
 #Temp use only a few mal-ed cohorts
-included_studies <- c("MAL-ED")
-d <- d %>% filter(agedays < 25 * 30.4167) %>%
-  filter(studyid %in% included_studies, country %in% c("BANGLADESH", "BRAZIL", "INDIA"))
+# included_studies <- c("MAL-ED")
+# d <- d %>% filter(agedays < 25 * 30.4167) %>%
+#   filter(studyid %in% included_studies, country %in% c("BANGLADESH", "BRAZIL", "INDIA"))
 
 
 

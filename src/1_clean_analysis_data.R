@@ -79,9 +79,9 @@ table(is.na(cov))
 
 
 #Temp use only a few mal-ed cohorts
-included_studies <- c("MAL-ED")
-cov <- cov %>% filter(studyid %in% included_studies)
-cov <- cov %>% filter(country %in% c("BANGLADESH", "BRAZIL", "INDIA"))
+# included_studies <- c("MAL-ED")
+# cov <- cov %>% filter(studyid %in% included_studies)
+# cov <- cov %>% filter(country %in% c("BANGLADESH", "BRAZIL", "INDIA"))
 
 
 

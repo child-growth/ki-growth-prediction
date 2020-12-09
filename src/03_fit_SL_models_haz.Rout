@@ -1,0 +1,290 @@
+
+R version 4.0.2 (2020-06-22) -- "Taking Off Again"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+> 
+> 
+> 
+> 
+> source(paste0(here::here(), "/0-config.R"))
+here() starts at /home/andrew.mertens/ki-growth-prediction
+── Attaching packages ─────────────────────────────────────── tidyverse 1.3.0 ──
+✔ ggplot2 3.3.2     ✔ purrr   0.3.4
+✔ tibble  3.0.3     ✔ dplyr   1.0.2
+✔ tidyr   1.1.1     ✔ stringr 1.4.0
+✔ readr   1.3.1     ✔ forcats 0.5.0
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+
+Attaching package: ‘reshape2’
+
+The following object is masked from ‘package:tidyr’:
+
+    smiths
+
+Loading required package: Matrix
+
+Attaching package: ‘Matrix’
+
+The following objects are masked from ‘package:tidyr’:
+
+    expand, pack, unpack
+
+Loading 'metafor' package (version 2.4-0). For an overview 
+and introduction to the package please type: help(metafor).
+
+Attaching package: ‘data.table’
+
+The following objects are masked from ‘package:reshape2’:
+
+    dcast, melt
+
+The following objects are masked from ‘package:dplyr’:
+
+    between, first, last
+
+The following object is masked from ‘package:purrr’:
+
+    transpose
+
+Loading required package: mvtnorm
+Loading required package: ellipse
+
+Attaching package: ‘ellipse’
+
+The following object is masked from ‘package:graphics’:
+
+    pairs
+
+Loading required package: mvmeta
+This is mvmeta 1.0.3. For an overview type: help('mvmeta-package').
+
+Attaching package: ‘mvmeta’
+
+The following object is masked from ‘package:metafor’:
+
+    blup
+
+
+Attaching package: ‘mada’
+
+The following object is masked from ‘package:metafor’:
+
+    forest
+
+The following object is masked from ‘package:readr’:
+
+    spec
+
+Type 'citation("pROC")' for a citation.
+
+Attaching package: ‘pROC’
+
+The following objects are masked from ‘package:stats’:
+
+    cov, smooth, var
+
+
+Attaching package: ‘assertthat’
+
+The following object is masked from ‘package:tibble’:
+
+    has_name
+
+Loading required package: nlme
+
+Attaching package: ‘nlme’
+
+The following object is masked from ‘package:dplyr’:
+
+    collapse
+
+This is mgcv 1.8-31. For overview type 'help("mgcv-package")'.
+
+Attaching package: ‘lazyeval’
+
+The following objects are masked from ‘package:purrr’:
+
+    is_atomic, is_formula
+
+
+Attaching package: ‘rlang’
+
+The following objects are masked from ‘package:lazyeval’:
+
+    as_name, call_modify, call_standardise, expr_label, expr_text,
+    f_env, f_env<-, f_label, f_lhs, f_lhs<-, f_rhs, f_rhs<-, f_text,
+    is_atomic, is_call, is_formula, is_lang, is_pairlist, missing_arg
+
+The following object is masked from ‘package:assertthat’:
+
+    has_name
+
+The following object is masked from ‘package:data.table’:
+
+    :=
+
+The following objects are masked from ‘package:purrr’:
+
+    %@%, as_function, flatten, flatten_chr, flatten_dbl, flatten_int,
+    flatten_lgl, flatten_raw, invoke, list_along, modify, prepend,
+    splice
+
+
+Attaching package: ‘scales’
+
+The following object is masked from ‘package:purrr’:
+
+    discard
+
+The following object is masked from ‘package:readr’:
+
+    col_factor
+
+
+Attaching package: ‘foreach’
+
+The following objects are masked from ‘package:purrr’:
+
+    accumulate, when
+
+Loading required package: iterators
+Loading required package: parallel
+Loading required package: nnls
+Super Learner
+Version: 2.0-26
+Package created on 2019-10-27
+
+Loading required package: lattice
+
+Attaching package: ‘caret’
+
+The following object is masked from ‘package:purrr’:
+
+    lift
+
+origami v1.0.3: Generalized Framework for Cross-Validation
+
+Attaching package: ‘future’
+
+The following object is masked from ‘package:caret’:
+
+    cluster
+
+ 
+cvAUC version: 1.1.0
+Notice to cvAUC users: Major speed improvements in version 1.1.0
+ 
+
+Attaching package: ‘cvAUC’
+
+The following object is masked from ‘package:mada’:
+
+    AUC
+
+> 
+> 
+> 
+> 
+> #Load data
+> d <- readRDS(paste0(data_dir,"analysis_data.RDS"))
+> #Subset to control arms
+> d <- d %>% filter(arm=="" | arm=="Control" | arm=="Iron and folic acid supplementation" | arm=="Iron Folic Acid")
+> d <- droplevels(d)
+> 
+> #Set parameter
+> CV_setting = TRUE
+> 
+> 
+> #wrapper function to fit and clean SL
+> fit_SuperLearner <- function(d, outcome, covars, slmod=sl, CV_setting=CV_setting, include_anthro=T, covars2=NULL){
++   if(include_anthro){
++     res <- d %>% group_by(studyid, country) %>% 
++       do(clean_prediction_dataset(., outcome = outcome, covars=covars, covars2=covars2)) %>%
++       do(fit=try(fit_SL(., outcome = outcome, covars=unique(c(covars,covars2)), slmod=slmod, CV=CV_setting)))%>%
++       ungroup() %>% do(clean_res(.))
++   }else{
++     res <- d %>% group_by(studyid, country) %>% 
++       do(fit=try(fit_SL(., outcome = outcome, covars=covars, slmod=slmod, CV=CV_setting)))%>%
++       ungroup() %>% do(clean_res(.))
++   }
++   return(res)
++ }
+> 
+> # source(paste0(here::here(), "/0-config.R"))
+> # d<- d %>% filter(studyid=="iLiNS-DOSE")
+> # res <- fit_SuperLearner(d,  outcome = "haz_24", covars=covars12, slmod=sl, CV=CV_setting)
+> # 
+> # res$fit[[1]]$result$run_time
+> # 
+> # res$fit[[1]]$result$perf_metrics$R2_full
+> 
+> #d <- d %>% filter(country=="TANZANIA, UNITED REPUBLIC OF")
+> 
+> start_time <- Sys.time()
+> 
+> 
+> #12 month haz
+> res_haz12_covars <- fit_SuperLearner(d,  outcome = "haz_12", covars=covars, slmod=sl, CV=CV_setting, include_anthro=F)
+Dropping  5  missing outcome observations
+Dropping for low variance:  W_mage W_meducyrs W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  37  missing outcome observations
+Dropping for low variance:  W_mage W_meducyrs W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  443  missing outcome observations
+Dropping for low variance:  W_nrooms W_mwtkg W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mbmiDropping  2138  missing outcome observations
+Dropping for low variance:  W_mwtkg W_mhtcm W_mbmi miss_W_mwtkg miss_W_mbmiDropping  473  missing outcome observations
+Dropping for low variance:  W_nrooms W_mwtkg W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping for low variance:  W_mage W_meducyrs W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  18  missing outcome observations
+Dropping for low variance:  W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  140  missing outcome observations
+Dropping for low variance:  W_mage W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  56  missing outcome observations
+Dropping for low variance:  sex W_mage W_meducyrs W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  113  missing outcome observations
+Dropping for low variance:  W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  177  missing outcome observations
+Dropping for low variance:  W_mage W_meducyrs W_nrooms miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  4  missing outcome observations
+Dropping for low variance:  W_mage W_meducyrs W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  6348  missing outcome observations
+Dropping for low variance:  miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  1006  missing outcome observations
+Dropping for low variance:  W_meducyrs W_nrooms W_mwtkg W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mbmiDropping  32  missing outcome observations
+Dropping for low variance:  W_mbmi miss_W_mage miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  38  missing outcome observations
+Dropping for low variance:  W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  22  missing outcome observations
+Dropping for low variance:  W_mbmi miss_W_mage miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  9  missing outcome observations
+Dropping for low variance:  W_mbmi miss_W_mage miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  57  missing outcome observations
+Dropping for low variance:  W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  61  missing outcome observations
+Dropping for low variance:  W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  31  missing outcome observations
+Dropping for low variance:  W_mbmi miss_W_mage miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  138  missing outcome observations
+Dropping for low variance:  W_meducyrs W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  52  missing outcome observations
+Dropping for low variance:  W_mage W_meducyrs W_nrooms W_mwtkg W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  85  missing outcome observations
+Dropping for low variance:  W_mage W_meducyrs W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  142  missing outcome observations
+Dropping for low variance:  W_mage W_meducyrs W_nrooms W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mbmiDropping  245  missing outcome observations
+Dropping for low variance:  W_nrooms miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping  467  missing outcome observations
+Dropping for low variance:  W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiThere were 50 or more warnings (use warnings() to see the first 50)
+> res_haz12_covars_birth <- fit_SuperLearner(d,  outcome = "haz_12", covars=covars_birth, slmod=sl, CV=CV_setting)
+Dropping for low variance:  haz_birth stunt_birth wast_birth sstunt_birth swast_birth sunderwt_birth W_mage W_meducyrs W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping for low variance:  sstunt_birth swast_birth sunderwt_birth W_mage W_meducyrs W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping for low variance:  stunt_birth sstunt_birth sunderwt_birth W_nrooms W_mwtkg W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmi missing_waz_birthDropping for low variance:  sstunt_birth swast_birth sunderwt_birth W_mwtkg W_mhtcm W_mbmi miss_W_mwtkg miss_W_mbmi missing_haz_birthDropping for low variance:  sstunt_birth swast_birth sunderwt_birth W_nrooms W_mwtkg W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmi missing_haz_birth missing_whz_birth missing_waz_birthDropping for low variance:  stunt_birth wast_birth underwt_birth sstunt_birth swast_birth sunderwt_birth sex W_mage W_meducyrs W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiError in xgboost::xgb.DMatrix(Xmat, label = Y) : 
+  REAL() can only be applied to a 'numeric', not a 'logical'
+In addition: There were 50 or more warnings (use warnings() to see the first 50)
+Error in xgboost::xgb.DMatrix(Xmat, label = Y) : 
+  REAL() can only be applied to a 'numeric', not a 'logical'
+In addition: There were 50 or more warnings (use warnings() to see the first 50)
+Failed on Lrnr_nnls_FALSE
+Dropping for low variance:  swast_birth W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping for low variance:  sstunt_birth swast_birth W_mage W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmi missing_haz_birthDropping for low variance:  haz_birth whz_birth stunt_birth wast_birth sstunt_birth swast_birth sunderwt_birth W_mage W_meducyrs W_nrooms miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmi missing_haz_birthDropping for low variance:  sstunt_birth sunderwt_birth W_mage W_meducyrs W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmi missing_haz_birth missing_waz_birthDropping for low variance:  whz_birth swast_birth miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmi missing_haz_birth missing_waz_birthDropping for low variance:  stunt_birth sstunt_birth sunderwt_birth W_meducyrs W_nrooms W_mwtkg W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mbmi missing_waz_birthDropping for low variance:  sstunt_birth swast_birth sunderwt_birth W_mbmi miss_W_mage miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping for low variance:  stunt_birth wast_birth underwt_birth sstunt_birth swast_birth sunderwt_birth W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping for low variance:  stunt_birth wast_birth sstunt_birth swast_birth sunderwt_birth W_mbmi miss_W_mage miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping for low variance:  stunt_birth wast_birth sstunt_birth swast_birth sunderwt_birth W_mbmi miss_W_mage miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping for low variance:  wast_birth underwt_birth sstunt_birth swast_birth sunderwt_birth W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping for low variance:  stunt_birth wast_birth sstunt_birth swast_birth sunderwt_birth W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping for low variance:  wast_birth underwt_birth sstunt_birth swast_birth sunderwt_birth W_mbmi miss_W_mage miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping for low variance:  sstunt_birth W_meducyrs W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping for low variance:  sstunt_birth sunderwt_birth W_mage W_meducyrs W_nrooms W_mwtkg W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmi missing_haz_birthDropping for low variance:  sstunt_birth swast_birth W_mage W_meducyrs W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping for low variance:  swast_birth W_mage W_meducyrs W_nrooms W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mbmi missing_haz_birthDropping for low variance:  haz_birth whz_birth stunt_birth wast_birth underwt_birth sstunt_birth swast_birth sunderwt_birth W_nrooms miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiDropping for low variance:  haz_birth whz_birth stunt_birth wast_birth underwt_birth sstunt_birth swast_birth sunderwt_birth sex W_meducyrs W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmiError in xgboost::xgb.DMatrix(Xmat, label = Y) : 
+  REAL() can only be applied to a 'numeric', not a 'logical'
+In addition: There were 50 or more warnings (use warnings() to see the first 50)
+Error in xgboost::xgb.DMatrix(Xmat, label = Y) : 
+  REAL() can only be applied to a 'numeric', not a 'logical'
+In addition: There were 50 or more warnings (use warnings() to see the first 50)
+Failed on Lrnr_nnls_FALSE
+There were 50 or more warnings (use warnings() to see the first 50)
+> res_haz12_covars3 <- fit_SuperLearner(d,  outcome = "haz_12", covars=covars3, slmod=sl, CV=CV_setting)
+Dropping for low variance:  swast_3 W_mage W_meducyrs W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmi missing_haz_3 missing_whz_3 missing_waz_3Dropping for low variance:  wast_3 swast_3 W_mage W_meducyrs W_nrooms W_mwtkg W_mhtcm W_mbmi miss_W_mage miss_W_meducyrs miss_W_nrooms miss_W_mwtkg miss_W_mhtcm miss_W_mbmi

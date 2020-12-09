@@ -103,3 +103,20 @@ covars12 <- c("haz_12", "whz_12", "waz_12", "stunt_12","wast_12","underwt_12", "
 
 #Set parameters
 CV_setting = FALSE
+
+
+#Fix cvAUC
+cvAUC <- function(predictions, labels, label.ordering = NULL, folds = NULL) {
+  
+  # Pre-process the input
+  clean <- .process_input(predictions = predictions, labels = labels, 
+                          label.ordering = label.ordering, folds = folds,
+                          ids = NULL, confidence = NULL)
+  
+  pred <- ROCR::prediction(clean$predictions, clean$labels)
+  perf <- ROCR::performance(pred, "tpr", "fpr")
+  fold_auc <- as.numeric(ROCR::performance(pred, measure = "auc", x.measure = "cutoff")@y.values)
+  cvauc <- mean(fold_auc)
+  
+  return(list(perf = perf, fold.AUC = fold_auc, cvAUC = cvauc))
+}

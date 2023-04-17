@@ -1,0 +1,202 @@
+---
+title: "Simulations of estimating causal effect curve using undersmoothed-HAL"
+author: "Seraphina Shi"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r load_lib, include = FALSE, warning=FALSE, message=FALSE, echo=FALSE}
+library(here)
+library(data.table)
+library(dplyr)
+library(tidyr)
+library(foreach)
+library(stringr)
+library(glmnet)
+library(sandwich)
+library(ggplot2)
+library(gridExtra)
+library(grid)
+```
+
+
+# Data simulation 
+Data structure:  $O = (W, A, Z, Y)$ 
+
+ * U - exogenous variables  
+ * W - baseline covariate that is a measure of body condition  
+ * A - treatment level based on W, continuous between 0 and 5  
+ * Y - outcome, indicator of an event ?  
+   
+ Underlying data generating process, $P_{U,X}$
+ 
+* Exogenous variables:  
+  + $U_A \sim Normal(\mu=0, \sigma^2 = 1^2)$  
+  + $U_A \sim Normal(\mu=0, \sigma^2 = 2^2)$  
+  + $U_Y \sim Uniform(min = 0, max = 1)$  
+  
+* Structural equations F and endogenous variables:  
+  + $W =  U_W$  
+  + $A = bound(2 - 0.5W + U_A, min=0, max=5)$  
+  + $Y = \mathbf{I}[U_Y < expit(W + 5*A  - 8)]$
+
+
+```{r}
+generate_data_1 <- function(n, a=NA){
+  # exogenous variables
+  U_W <- rnorm(n, 0, 1)
+  U_A <- rnorm(n, 0, 2)
+  U_Y <- runif(n, 0, 1)
+  
+  # endogenous variables
+  W <- U_W
+  
+  if(is.na(a)){
+    A <-  2 - 0.5*W + U_A
+    A[A<=0] = 0
+    A[A>=5] = 5
+  } else {
+    A <- rep(a, n)
+  }
+  
+  Y <- as.numeric(U_Y < plogis(W + 5*A  - 8))
+  
+  # data frame
+  O <- data.frame(W, A, Y)
+  return(O)
+}
+obs <- generate_data_1(n=10000)
+print(summary(obs))
+```
+
+# Calculate IC
+```{r}
+cal_IC_for_beta <- function(X, Y, Y_hat, beta_n){
+  n <- dim(X)[1] 
+  p <- length(beta_n)
+  if (!is.matrix(X)) X <- as.matrix(X)
+  
+  # 1. calculate score: X(Y - phi(X))
+  res <- Y-Y_hat
+  score <- sweep(X, 1, res, `*`)
+  
+  # 2. calculate the derivative of phi:
+  d_phi_scaler <- as.vector(exp(- beta_n %*% t(X)) / ((1 + exp(- beta_n %*% t(X)))^2))
+  d_phi <- sweep(X, 1, d_phi_scaler, `*`)
+  
+  # 3. E_{P_n}(X d_phi)^(-1)
+  tmat <- solve(t(X) %*% d_phi / n)
+  
+  # 4. calculate influence curves
+  IC <- t(tmat %*% t(score))
+  
+  return(IC)
+}
+cal_IC_for_phi <- function(X_new, beta_n, IC_beta){
+  
+  if (!is.matrix(X_new)) X_new <- as.matrix(X_new)
+  
+  d_phi_scaler_new <- as.vector(exp(- beta_n %*% t(X_new)) / ((1 + exp(- beta_n %*% t(X_new)))^2))
+  d_phi_new <- sweep(X_new, 1, d_phi_scaler_new, `*`)
+  
+  IC = diag(d_phi_new %*% t(IC_beta))
+  
+  return(IC)
+}
+```
+
+```{r}
+set.seed(123)
+n = 100
+obs <- generate_data_1(n)
+glm_fit <- glm(formula = Y ~ W + A,
+               family = binomial,
+               data = obs)
+y_name = "Y" 
+x_names = c("W", "A")
+Y <- as.numeric(as.matrix(obs %>% select(all_of(y_name))))
+X <- obs %>% 
+    select(all_of(x_names)) %>% 
+    mutate_if(sapply(., is.factor), as.numeric)
+  
+  
+ICs <- cal_IC_for_beta(X = cbind(rep(1, n), X),
+                       Y = Y, 
+                       Y_hat = predict(glm_fit, type = "response"), 
+                       beta_n = glm_fit$coef)
+se_IC <- sqrt(apply(ICs, 2, var)/n)
+# compare estimated se from calculated ICs and from glm_fit. 
+cbind(se_IC, sqrt(diag(sandwich(glm_fit))))
+```
+
+# Calculate IC for phi
+```{r}
+y_name = "Y" 
+x_names = c("W", "A")
+Y <- as.numeric(as.matrix(obs %>% select(all_of(y_name))))
+X <- obs %>% 
+    select(all_of(x_names)) %>% 
+    mutate_if(sapply(., is.factor), as.numeric)
+beta_n = glm_fit$coef
+IC_beta <- cal_IC_for_beta(X = cbind(rep(1, n), X), Y = Y,
+                           Y_hat = predict(glm_fit, type = "response"), 
+                           beta_n = beta_n)
+IC_phi <- cal_IC_for_phi(X_new  = cbind(rep(1, n), X), 
+                         beta_n, IC_beta)
+  
+se_IC <- sqrt(var(IC_phi)/n)
+se_Y_hat <- sqrt(var(predict(glm_fit))/n)
+cbind(se_IC, se_Y_hat)
+```
+
+# Calculate IC for phi with HAL working model
+```{r}
+library(hal9001)
+y_name = "Y" 
+x_names = c("W", "A")
+Y <- as.numeric(as.matrix(obs %>% select(all_of(y_name))))
+X <- obs %>% 
+    select(all_of(x_names)) %>% 
+    mutate_if(sapply(., is.factor), as.numeric)
+fit_init <- fit_hal(X = X,
+                      Y = Y,
+                      smoothness_orders = 0,
+                      return_x_basis = TRUE,
+                      family = "binomial",
+                      num_knots = hal9001:::num_knots_generator(
+                        max_degree = ifelse(ncol(X) >= 20, 2, 3),
+                        smoothness_orders = 0,
+                        base_num_knots_0 = max(100, ceiling(sqrt(n)))
+                      )
+)
+Y_hat_init <- predict(fit_init, new_data = X)
+init_coef <- fit_init$coefs[-1]
+nonzero_col <- which(init_coef != 0)
+init_coef_nonzero <- init_coef[nonzero_col]
+basis_mat <- as.matrix(fit_init$x_basis)
+basis_mat <- as.matrix(basis_mat[, nonzero_col])
+IC_beta <- cal_IC_for_beta(X = basis_mat, Y = Y, Y_hat = Y_hat_init, 
+                           beta_n = init_coef_nonzero)
+IC_phi <- cal_IC_for_phi(X_new = basis_mat, 
+                         beta_n = init_coef_nonzero, IC_beta)
+se_IC <- sqrt(var(IC_phi)/n)
+se_IC
+```
+
+```{r}
+X_a1 <- X
+X_a1$A = 1
+Y_hat_init_a1 <- predict(fit_init, new_data = X_a1)
+x_basis_a1 <- make_design_matrix(as.matrix(X_a1), fit_init$basis_list, p_reserve = 0.75)
+x_basis_a1 <- as.matrix(x_basis_a1[, nonzero_col])
+IC_phi <- cal_IC_for_phi(X_new = x_basis_a1, 
+                         beta_n = init_coef_nonzero, IC_beta)
+# matrix is singular and cannot be inverted
+se_IC <- sqrt(var(IC_phi)/n)
+se_IC
+```
+
+
+

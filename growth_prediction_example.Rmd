@@ -1,0 +1,123 @@
+---
+title: "Example HAL counterfactuals"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+rm(list=ls())
+source(paste0(here::here(), "/0-config.R"))
+source(paste0(here::here(), "/functions/0_calc_empirical_IC.R"))
+library(hal9001)
+library(washb)
+birthweight_shift <- readRDS(paste0(here::here(),"/figures/birthweight_shift_example.RDS"))
+waz_shift <- readRDS(paste0(here::here(),"/figures/waz_shift_example.RDS"))
+
+d <- readRDS(paste0(data_dir,"analysis_data.RDS"))
+
+y_name = "whz_24" 
+x_names = c(covars, "arm", "waz_birth")
+dfull <- d %>% ungroup() %>% select(all_of(c("studyid","country",y_name, x_names)))
+
+#temp: complete cases
+dim(dfull)
+dfull <- dfull[complete.cases(dfull),]
+dfull <- droplevels(dfull)
+dim(dfull)
+
+dfull$cohort <- paste0(dfull$studyid,"-",dfull$country)
+
+```
+
+
+## Data description
+
+```{r}
+
+#Number children:
+nrow(dfull)
+
+#cohort sizes:
+table(dfull$cohort)
+
+#predictors:
+x_names
+
+
+
+```
+
+
+## HAL model
+
+```{r, eval=FALSE}
+
+  fit_init <- fit_hal(X = X,
+                      Y = Y,
+                      smoothness_orders = 0,
+                      return_x_basis = TRUE,
+                      family = "gaussian",
+                      num_knots = hal9001:::num_knots_generator(
+                        max_degree = ifelse(ncol(X) >= 20, 2, 3),
+                        smoothness_orders = 0,
+                        base_num_knots_0 = max(100, ceiling(sqrt(n)))
+                      ))
+
+```
+
+
+## Counterfactual 1: Shifting all low birthweight babies to the low-birthweight threshold (2500g)
+
+```{r, echo=F}
+
+waz_shift$p
+
+d <- waz_shift$plotdf
+
+diff <- round( d$est[d$estimate=="counterfactual"& d$study=="Pooled"] - d$est[d$estimate=="observed" & d$study=="Pooled"], 3)
+
+
+#mean(d$est[d$estimate=="counterfactual" & !grepl(d$study,"Pooled")] - d$est[d$estimate=="observed" & !grepl(d$study,"Pooled")])
+
+
+```
+
+WHZ increase at 6 months: `r diff``
+
+
+## Counterfactual 2: LNS suppliments for all moms during pregnancy (40g birthweight gain based on RCT meta-analysis)
+
+
+
+```{r, echo=FALSE}
+
+birthweight_shift$p
+
+d <- birthweight_shift$plotdf
+
+diff <- round( d$est[d$estimate=="counterfactual"& d$study=="Pooled"] - d$est[d$estimate=="observed" & d$study=="Pooled"], 3)
+
+
+
+```
+
+
+WHZ increase at 6 months: `r diff``
+
+
+
+## Next steps:
+
+  -  Make shiny interface
+  -  Estimate outcome difference directly
+  -  Get prevalence difference of wasting/stunting
+  -  Fit models for all growth exposures/outcomes
+  -  Tune HAL models
+  -  Add HAL model accuracy
+  -  Add diagnostics (covariates used, N's for each study, percent of kids shifted)
+  -  Ability to subset by subgroups (region, sex, children intervened on)
+  -  Add maternal size shifting
+  -  Add variable importance ranking of predictors
+  -  Question? Should I be using the shift TMLE to be able to target the impact of shifting early growth, etc?
+  
+  

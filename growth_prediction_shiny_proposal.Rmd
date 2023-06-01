@@ -1,0 +1,64 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+### "if a hypothetical intervention increased growth by X1 amount at age Y1, it would reduce wasting by X2 amount by age y2"
+
+
+```{r, include=F}
+
+source(paste0(here::here(), "/0-config.R"))
+
+#Load data
+d <- readRDS(paste0(ghapdata_dir, "ki-manuscript-dataset.rds")) %>% filter(whz >= -6 & whz <=6, !is.na(whz), agedays < 731) 
+
+dim(d)
+
+```
+
+  1.  ~30 studies, 61,3695 measures for longitudinal data. Alternatively could use nationally-representative cross-sectional survey data from DHS or MICS (millions of obs)
+  2.  -different nutritional and health contexts. Mean growth varies a lot by country
+  3.  -ages measured at different intervals and frequencies across studies
+  4.  -South Asia overrepresented
+  5.  -different covariates in each study
+
+
+```{r}
+
+p<-ggplot(d, aes(x=agedays)) + geom_histogram()
+
+print(p)
+
+```
+
+```{r}
+
+p<-ggplot(d, aes(x=agedays)) + facet_wrap(~studyid) + geom_histogram()
+
+print(p)
+
+```
+
+
+```{r}
+
+p<-ggplot(d, aes(x=agedays, y=whz)) + facet_wrap(~studyid) + #geom_point(alpha=0.1) +
+  geom_smooth(se=F)
+
+print(p)
+
+
+```
+
+
+
+
+
+Shiny app off protected data? Either simple superlearner predictions or a TMLE shift analysis
+
+Weighted SuperLearner?
+
+Considerations in transportability/generalizability?
+
+-Printed red flags based on # of children/studies used in predictions?

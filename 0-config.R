@@ -55,9 +55,9 @@ library(future)
 library(cvAUC)
 
 # Source base functions  
-source(here("/functions/0_pooling_functions.R"))
+source(paste0(here::here(),"/functions/0_pooling_functions.R"))
 
-source(here("/functions/0_prediction_functions.R"))
+source(paste0(here::here(),"/functions/0_prediction_functions.R"))
 
 #Data directories
 ghapdata_dir = "/data/KI/UCB-SuperLearner/Manuscript analysis data/"
